@@ -13,58 +13,107 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health
+
     envVars:
+      # ------------------------------------------------------------
+      # Application Configuration
+      # ------------------------------------------------------------
       - key: APP_NAME
         value: MissionOS Backend
+
       - key: ENVIRONMENT
         value: production
+
       - key: DEBUG
         value: "false"
+
       - key: LOG_LEVEL
         value: INFO
-      # No frontend deployed yet -- set as a placeholder at blueprint-creation
-      # time, then update to the real frontend origin once it exists. The
-      # production config validator rejects localhost origins outright, so
-      # this can't default to one.
+
+      # ------------------------------------------------------------
+      # CORS Configuration
+      # ------------------------------------------------------------
+      # Set this to the deployed frontend URL.
+      # Example:
+      # https://missionos-frontend.onrender.com
+      #
+      # This is intentionally not hardcoded because the frontend
+      # deployment URL may differ between environments.
       - key: CORS_ORIGINS
         sync: false
-      # Paste the database's Internal Database URL here with `+psycopg`
-      # inserted after `postgresql` (see deployment notes) -- SQLAlchemy
-      # needs the driver in the URL, and this backend only installs psycopg3,
-      # not psycopg2, so Render's raw connection string needs that one edit.
+
+      # ------------------------------------------------------------
+      # Database Configuration
+      # ------------------------------------------------------------
+      # Use the Render PostgreSQL Internal Database URL.
+      #
+      # The backend uses psycopg3, so the SQLAlchemy URL should use:
+      #
+      # postgresql+psycopg://...
+      #
+      # instead of:
+      #
+      # postgresql://...
+      #
       - key: DATABASE_URL
         sync: false
-      # Render generates a strong random value here automatically -- already
-      # satisfies the production validator's 32-char / non-default checks.
+
+      # ------------------------------------------------------------
+      # JWT Authentication
+      # ------------------------------------------------------------
+      # Render automatically generates a secure random secret.
       - key: JWT_SECRET_KEY
         generateValue: true
+
       - key: JWT_ALGORITHM
         value: HS256
+
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "30"
-      # Prompted for during blueprint creation -- paste your real key directly
-      # into Render's own prompt, it never needs to pass through anywhere else.
+
+      # ------------------------------------------------------------
+      # OpenAI Configuration
+      # ------------------------------------------------------------
+      # Enter the OpenAI API key through Render's environment-variable
+      # configuration. The secret is not stored in this repository.
       - key: OPENAI_API_KEY
         sync: false
+
       - key: OPENAI_MODEL
         value: gpt-4o-mini
-      # 30s fits this default model. If you change OPENAI_MODEL above to a
-      # reasoning-tier model (o1/o3/o4/gpt-5 families), raise this too --
-      # measured live, the Risk agent alone can take ~70s at reasoning
-      # effort "low" before writing any visible output, since
-      # max_output_tokens is a budget shared between invisible reasoning
-      # tokens and the visible response. 200 is a safe starting point.
+
+      # Timeout for OpenAI API requests in seconds.
       - key: OPENAI_TIMEOUT
         value: "30"
+
+      # Embedding model used by the retrieval system.
       - key: OPENAI_EMBEDDING_MODEL
         value: text-embedding-3-small
+
+      # ------------------------------------------------------------
+      # RAG / Vector Store Configuration
+      # ------------------------------------------------------------
+      # Directory used to store the local vector database.
       - key: VECTOR_STORE_DIR
         value: storage/vectorstore
+
+      # Number of rows included in each RAG chunk.
+      # This controls the granularity of document/data chunks
+      # used during retrieval.
       - key: RAG_CHUNK_ROW_SIZE
         value: "25"
+
+      # Number of relevant chunks returned for each RAG query.
       - key: RAG_TOP_K
         value: "6"
+
+      # ------------------------------------------------------------
+      # File Upload Configuration
+      # ------------------------------------------------------------
+      # Directory used for uploaded files.
       - key: UPLOAD_DIR
         value: storage/uploads
+
+      # Maximum upload size: 25 MB.
       - key: MAX_UPLOAD_SIZE_BYTES
         value: "26214400"
